@@ -1,0 +1,53 @@
+Create a Database
+C:\Users\Administrator\Desktop\thewatcher\sqllite\sqlite3.exe C:\Users\Administrator\Desktop\thewatcher\databases\requests.db
+
+
+Create Tables
+
+CREATE TABLE IF NOT EXISTS requests (
+   	timedate text NOT NULL,
+	action text NOT NULL,
+	target text NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS results(
+   	timedate text NOT NULL,
+	action text NOT NULL,
+	target text NOT NULL,
+	result text NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS actions(
+	action text NOT NULL,
+	target text NOT NULL,
+	command text NOT NULL,
+	cooldown int NOT NULL,
+	htmldescription text NOT NULL,
+	additionalParameters NOT NULL,
+	logs NOT NULL
+);
+
+The JSP will insert into this table. Note that all values are CASE SENSITIVE:
+INSERT INTO requests (timedate,action,target) VALUES( datetime('now'), 'checkService','WIN-QUCBQNO47MF');
+INSERT INTO requests (timedate,action,target) VALUES( datetime('now'), 'checkService','MSCVWIND01');
+
+Then the Worker will search for pending requests table:
+SELECT MAX(timedate), action, target FROM requests WHERE timedate >= Datetime('now', '-3 minutes') GROUP BY action, target ;
+
+Then the Worker will search for the necessary commands:
+SELECT command FROM actions WHERE action = 'checkService' AND target = 'localmachine'
+
+Then the Worker will run the command and insert the results into the results table:
+INSERT INTO results (timedate,action,target,result) VALUES( datetime('now'), 'checkService','localmachine', 'result');
+
+The JSP will now be able to retrieve the results:
+SELECT timedate, action, target, result FROM results;
+
+Populate the actiosn table with the following:
+DELETE FROM actions;
+INSERT INTO actions(action,target,command,cooldown,htmldescription,additionalParameters) VALUES('checkService','WIN-QUCBQNO47MF','C:\Users\Administrator\Desktop\thewatcher\actions\checkService.ps1',40,'Check on the services on the SAMPLE server','-Services "BITS,WINRM" -LogLoc "Desktop\thewatcher\logs"');
+INSERT INTO actions(action,target,command,cooldown,htmldescription,additionalParameters) VALUES('pingMachine','WIN-QUCBQNO47MF','C:\Users\Administrator\Desktop\thewatcher\actions\pingMachine.ps1',40,'Check on the services on the SAMPLE server','-LogLoc "Desktop\thewatcher\logs"');
+
+
+
+
